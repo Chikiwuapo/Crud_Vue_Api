@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { getUsers } from '../service/userService';
 import Loader from '../components/Loader.vue';
 import UserList from '../components/UserList.vue';
@@ -7,8 +7,10 @@ import AppModal from '../components/Modal.vue';
 import DeleteModal from '../components/DeleteModal.vue';
 import UserForm from '../components/UserForm.vue';
 import Toast from '../components/Toast.vue';
+import Button from '../components/Button.vue';
+import Pagination from '../components/Pagination.vue';
 
-// State
+// --- Estado Local para CRUD ---
 const users = ref([]);
 const loading = ref(false);
 const showModal = ref(false);
@@ -19,7 +21,27 @@ const userToDelete = ref(null);
 const errors = ref({});
 const toasts = ref([]);
 
-// Toast Helper
+// --- Paginación (6 por página) ---
+const currentPage = ref(1);
+const itemsPerPage = 6;
+
+const totalPages = computed(() => Math.ceil(users.value.length / itemsPerPage));
+const paginatedUsers = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  return users.value.slice(start, start + itemsPerPage);
+});
+
+// --- Persistencia Local (LocalStorage) ---
+const saveToLocal = (data) => {
+  localStorage.setItem('users_db', JSON.stringify(data));
+};
+
+const loadFromLocal = () => {
+  const data = localStorage.getItem('users_db');
+  return data ? JSON.parse(data) : null;
+};
+
+// --- Notificaciones (Toasts) ---
 const addToast = (type, message) => {
   const id = Date.now();
   toasts.value.push({ id, type, message });
@@ -29,20 +51,34 @@ const removeToast = (id) => {
   toasts.value = toasts.value.filter(t => t.id !== id);
 };
 
-// Logic
+// --- Lógica de CRUD ---
+
+// 1. Obtener Usuarios (API -> LocalStorage -> Array Local)
 const fetchUsers = async () => {
   loading.value = true;
+  
+  // Primero intentamos cargar de LocalStorage
+  const localData = loadFromLocal();
+  if (localData && localData.length > 0) {
+    users.value = localData;
+    loading.value = false;
+    return;
+  }
+
+  // Si no hay datos locales, traemos de la API (solo la primera vez)
   try {
     const { data } = await getUsers();
     users.value = data;
+    saveToLocal(data); // Guardamos la base inicial localmente
   } catch (error) {
-    addToast('error', 'No se pudieron cargar los usuarios');
+    addToast('error', 'Error al sincronizar con la API');
     console.error(error);
   } finally {
     loading.value = false;
   }
 };
 
+// 2. Agregar Usuario (Localmente)
 const openCreateModal = () => {
   isEditing.value = false;
   currentUser.value = { id: null, name: '', username: '', email: '', phone: '' };
@@ -50,6 +86,7 @@ const openCreateModal = () => {
   showModal.value = true;
 };
 
+// 3. Editar Usuario (Localmente)
 const openEditModal = (user) => {
   isEditing.value = true;
   currentUser.value = { ...user };
@@ -57,60 +94,105 @@ const openEditModal = (user) => {
   showModal.value = true;
 };
 
+// 4. Eliminar Usuario (Localmente)
 const openDeleteConfirm = (user) => {
   userToDelete.value = user;
   showDeleteModal.value = true;
 };
 
+// --- Validaciones ---
 const validate = () => {
   errors.value = {};
   if (!currentUser.value.name) errors.value.name = 'El nombre es requerido';
   if (!currentUser.value.username) errors.value.username = 'El usuario es requerido';
+  
+  // Validación de Email: Requerido y debe contener "@"
   if (!currentUser.value.email) {
     errors.value.email = 'El email es requerido';
+  } else if (!currentUser.value.email.includes('@')) {
+    errors.value.email = 'El email debe contener un símbolo "@"';
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(currentUser.value.email)) {
-    errors.value.email = 'Formato de email inválido';
+    errors.value.email = 'Formato de email inválido (ej: correo@ejemplo.com)';
   }
+
   if (!currentUser.value.phone) errors.value.phone = 'El teléfono es requerido';
   return Object.keys(errors.value).length === 0;
 };
 
-const saveUser = () => {
+// --- Acciones Finales del CRUD ---
+
+const saveUser = async () => {
   if (!validate()) return;
 
+  loading.value = true;
+  showModal.value = false;
+
+  // Loader elegante de 3 segundos
+  await new Promise(resolve => setTimeout(resolve, 3000));
+
   if (isEditing.value) {
+    // Actualizar en Array Local
     const index = users.value.findIndex(u => u.id === currentUser.value.id);
     if (index !== -1) {
       users.value[index] = { ...currentUser.value };
-      addToast('success', `Usuario ${currentUser.value.name} actualizado`);
+      addToast('success', `Usuario ${currentUser.value.name} actualizado localmente`);
     }
   } else {
+    // Generar ID Secuencial Automático
     const newId = users.value.length > 0 ? Math.max(...users.value.map(u => u.id)) + 1 : 1;
     users.value.push({ ...currentUser.value, id: newId });
-    addToast('success', `Usuario ${currentUser.value.name} creado`);
+    addToast('success', `Usuario ${currentUser.value.name} creado localmente`);
+    
+    // Mover a la página donde está el nuevo usuario
+    currentPage.value = Math.ceil(users.value.length / itemsPerPage);
   }
-  showModal.value = false;
+
+  saveToLocal(users.value); // Persistir cambios en LocalStorage
+  loading.value = false;
 };
 
-const confirmDelete = () => {
+const confirmDelete = async () => {
   if (userToDelete.value) {
     const name = userToDelete.value.name;
-    users.value = users.value.filter(u => u.id !== userToDelete.value.id);
-    addToast('success', `Usuario ${name} eliminado`);
+    const userId = userToDelete.value.id;
+    
     showDeleteModal.value = false;
+    loading.value = true;
+
+    // Loader elegante de 3 segundos
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
+    // Eliminar del Array Local
+    users.value = users.value.filter(u => u.id !== userId);
+    saveToLocal(users.value); // Persistir borrado en LocalStorage
+    
+    addToast('success', `Usuario ${name} eliminado del sistema local`);
+    
+    // Ajustar página si la actual queda vacía
+    if (currentPage.value > totalPages.value && totalPages.value > 0) {
+      currentPage.value = totalPages.value;
+    }
+    
+    loading.value = false;
     userToDelete.value = null;
   }
 };
 
+// --- Ciclo de Vida ---
 onMounted(fetchUsers);
+
+// Observar cambios para asegurar sincronización (opcional pero robusto)
+watch(users, (newVal) => {
+  saveToLocal(newVal);
+}, { deep: true });
 </script>
 
 <template>
-  <main class="w-full min-h-screen bg-cream-100 flex flex-col p-4 md:p-8">
+  <main class="w-full min-h-screen bg-white flex flex-col p-4 md:p-8 lg:p-12">
     <Loader :show="loading" />
 
-    <!-- Toast Container -->
-    <div class="fixed top-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none">
+    <!-- Notificaciones Flotantes -->
+    <div class="fixed top-8 right-8 z-[300] flex flex-col gap-4 pointer-events-none">
       <Toast 
         v-for="toast in toasts" 
         :key="toast.id" 
@@ -119,36 +201,53 @@ onMounted(fetchUsers);
       />
     </div>
 
-    <!-- Header -->
-    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 animate-fade-in-down">
-      <div>
-        <h1 class="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">Gestión de Usuarios</h1>
-        <p class="text-xs text-slate-500 mt-1 font-medium">Panel de administración moderno y fluido</p>
+    <!-- Encabezado Principal -->
+    <header 
+      class="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-16"
+      v-motion
+      :initial="{ opacity: 0, y: -50 }"
+      :enter="{ opacity: 1, y: 0, transition: { duration: 800, ease: 'easeOut' } }"
+    >
+      <div class="space-y-3">
+        <h1 class="text-3xl md:text-4xl font-light text-slate-900 tracking-tight">
+          Gestión de <span class="text-gold-600 font-medium">Usuarios</span>
+        </h1>
+        <div class="flex items-center gap-4">
+          <div class="h-[2px] w-10 bg-gold-300"></div>
+          <p class="text-xs text-slate-400 uppercase tracking-[0.3em] font-bold">
+            Panel Administrativo Elite | Local CRUD
+          </p>
+        </div>
       </div>
-      <button 
-        @click="openCreateModal"
-        class="inline-flex items-center gap-2 px-4 py-2 bg-gold-500 hover:bg-gold-600 text-white text-xs font-bold rounded-xl shadow-lg shadow-gold-500/20 transition-all active:scale-95"
-      >
+      
+      <Button @click="openCreateModal" class="w-full md:w-auto scale-110">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
         </svg>
-        Añadir Nuevo Usuario
-      </button>
+        <span class="text-xs uppercase tracking-widest font-bold">Nuevo Usuario</span>
+      </Button>
     </header>
 
-    <!-- Table Section -->
-    <section class="flex-1 w-full">
+    <!-- Sección de Tabla con Datos Locales -->
+    <section class="flex-1 w-full flex flex-col">
       <UserList 
-        :items="users" 
+        :items="paginatedUsers" 
         @edit="openEditModal" 
         @delete="openDeleteConfirm"
       />
+      
+      <!-- Componente de Paginación (6 por página) -->
+      <Pagination 
+        v-if="totalPages > 1"
+        v-model:currentPage="currentPage" 
+        :totalPages="totalPages"
+      />
     </section>
 
-    <!-- Modals -->
+    <!-- Modal para Agregar/Editar -->
     <AppModal 
       :show="showModal" 
-      :title="isEditing ? 'Editar Usuario' : 'Nuevo Usuario'" 
+      :title="isEditing ? 'Perfeccionar Perfil Elite' : 'Nuevo Integrante Elite'" 
       @close="showModal = false"
     >
       <UserForm 
@@ -159,19 +258,17 @@ onMounted(fetchUsers);
       <template #footer>
         <button 
           @click="showModal = false"
-          class="px-5 py-2 text-xs font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all"
+          class="px-8 py-3 text-xs font-bold text-slate-400 hover:text-slate-600 uppercase tracking-widest transition-all"
         >
-          Cancelar
+          Descartar
         </button>
-        <button 
-          @click="saveUser"
-          class="px-5 py-2 text-xs font-bold bg-gold-500 hover:bg-gold-600 text-white rounded-xl shadow-md shadow-gold-500/10 transition-all active:scale-95"
-        >
-          Guardar Cambios
-        </button>
+        <Button @click="saveUser">
+          <span class="text-xs uppercase tracking-widest">{{ isEditing ? 'Actualizar Registro' : 'Confirmar Creación' }}</span>
+        </Button>
       </template>
     </AppModal>
 
+    <!-- Modal de Confirmación de Borrado -->
     <DeleteModal 
       :show="showDeleteModal"
       :userName="userToDelete?.name"
@@ -180,3 +277,26 @@ onMounted(fetchUsers);
     />
   </main>
 </template>
+
+<style>
+/* Estética Global Minimalista */
+body {
+  background-color: #ffffff;
+  color: #1e293b;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.text-gold-600 { color: #a6844c; }
+.text-gold-300 { color: #e2c08d; }
+.bg-gold-300 { background-color: #e2c08d; }
+.bg-cream-50 { background-color: #fffaf0; }
+
+/* Transiciones de Paginación */
+.pagination-enter-active, .pagination-leave-active {
+  transition: all 0.3s ease;
+}
+.pagination-enter-from, .pagination-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+</style>

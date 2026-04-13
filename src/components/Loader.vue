@@ -1,12 +1,59 @@
+<script setup>
+defineProps({
+  show: {
+    type: Boolean,
+    default: false
+  }
+});
+</script>
+
+<template>
+  <Transition
+    enter-active-class="transition-opacity duration-500 ease-out"
+    enter-from-class="opacity-0"
+    enter-to-class="opacity-100"
+    leave-active-class="transition-opacity duration-500 ease-in"
+    leave-from-class="opacity-100"
+    leave-to-class="opacity-0"
+  >
+    <div 
+      v-if="show" 
+      class="fixed inset-0 z-[200] flex items-center justify-center bg-white/60 backdrop-blur-md"
+    >
+      <div class="loader-container flex flex-col items-center gap-6">
+        <div class="loader">
+          <svg width="100" height="100" viewBox="0 0 100 100">
+            <defs>
+              <mask id="clipping">
+                <polygon points="0,0 100,0 100,100 0,100" fill="black"></polygon>
+                <polygon points="25,25 75,25 50,75" fill="white"></polygon>
+                <polygon points="50,25 75,75 25,75" fill="white"></polygon>
+                <polygon points="35,35 65,35 50,65" fill="white"></polygon>
+                <polygon points="35,35 65,35 50,65" fill="white"></polygon>
+                <polygon points="35,35 65,35 50,65" fill="white"></polygon>
+                <polygon points="35,35 65,35 50,65" fill="white"></polygon>
+              </mask>
+            </defs>
+          </svg>
+          <div class="box"></div>
+        </div>
+        <p class="text-xs font-bold text-gold-700 tracking-[0.2em] uppercase animate-pulse">
+          Procesando
+        </p>
+      </div>
+    </div>
+  </Transition>
+</template>
+
 <style scoped>
   .loader {
-    --color-one: #ffbf48;
-    --color-two: #be4a1d;
-    --color-three: #ffbf4780;
-    --color-four: #bf4a1d80;
-    --color-five: #ffbf4740;
+    --color-one: #e2c08d;
+    --color-two: #8a6d3b;
+    --color-three: #e2c08d80;
+    --color-four: #8a6d3b80;
+    --color-five: #e2c08d40;
     --time-animation: 2s;
-    --size: 1; /* You can change the size */
+    --size: 0.8; 
     position: relative;
     border-radius: 50%;
     transform: scale(var(--size));
@@ -96,69 +143,28 @@
   }
 
   @keyframes rotation {
-    0% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(360deg);
-    }
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }
 
   @keyframes roundness {
-    0% {
-      filter: contrast(15);
-    }
-    20% {
-      filter: contrast(3);
-    }
-    40% {
-      filter: contrast(3);
-    }
-    60% {
-      filter: contrast(15);
-    }
-    100% {
-      filter: contrast(15);
-    }
+    0% { filter: contrast(15); }
+    20% { filter: contrast(3); }
+    40% { filter: contrast(3); }
+    60% { filter: contrast(15); }
+    100% { filter: contrast(15); }
   }
 
   @keyframes colorize {
-    0% {
-      filter: hue-rotate(0deg);
-    }
-    20% {
-      filter: hue-rotate(-30deg);
-    }
-    40% {
-      filter: hue-rotate(-60deg);
-    }
-    60% {
-      filter: hue-rotate(-90deg);
-    }
-    80% {
-      filter: hue-rotate(-45deg);
-    }
-    100% {
-      filter: hue-rotate(0deg);
-    }
+    0% { filter: hue-rotate(0deg); }
+    20% { filter: hue-rotate(-30deg); }
+    40% { filter: hue-rotate(-60deg); }
+    60% { filter: hue-rotate(-90deg); }
+    80% { filter: hue-rotate(-45deg); }
+    100% { filter: hue-rotate(0deg); }
+  }
+
+  .text-gold-700 {
+    color: #8a6d3b;
   }
 </style>
-
-<template>
-  <div class="loader">
-    <svg width="100" height="100" viewBox="0 0 100 100">
-      <defs>
-        <mask id="clipping">
-          <polygon points="0,0 100,0 100,100 0,100" fill="black"></polygon>
-          <polygon points="25,25 75,25 50,75" fill="white"></polygon>
-          <polygon points="50,25 75,75 25,75" fill="white"></polygon>
-          <polygon points="35,35 65,35 50,65" fill="white"></polygon>
-          <polygon points="35,35 65,35 50,65" fill="white"></polygon>
-          <polygon points="35,35 65,35 50,65" fill="white"></polygon>
-          <polygon points="35,35 65,35 50,65" fill="white"></polygon>
-        </mask>
-      </defs>
-    </svg>
-    <div class="box"></div>
-  </div>
-</template>

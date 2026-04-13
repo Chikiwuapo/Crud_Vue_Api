@@ -1,30 +1,22 @@
-<style scoped>
-  button {
-    background-color: white;
-    color: black;
-    border-radius: 10em;
-    font-size: 17px;
-    font-weight: 600;
-    padding: 1em 2em;
-    cursor: pointer;
-    transition: all 0.3s ease-in-out;
-    border: 1px solid black;
-    box-shadow: 0 0 0 0 black;
-  }
-
-  button:hover {
-    transform: translateY(-4px) translateX(-2px);
-    box-shadow: 2px 5px 0 0 black;
-  };
-
-  button:active {
-    transform: translateY(2px) translateX(1px);
-    box-shadow: 0 0 0 0 black;
-  };
-</style>
-
 <template>
-  <button>
-      Hover Me
+  <button 
+    class="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-white border border-gold-200 text-gold-700 text-xs font-bold rounded-full shadow-sm hover:bg-cream-50 hover:border-gold-300 hover:shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed group"
+  >
+    <slot></slot>
   </button>
 </template>
+
+<style scoped>
+.bg-cream-50 {
+  background-color: #fffaf0;
+}
+.border-gold-200 {
+  border-color: #e2c08d;
+}
+.border-gold-300 {
+  border-color: #d4a35c;
+}
+.text-gold-700 {
+  color: #8a6d3b;
+}
+</style>
