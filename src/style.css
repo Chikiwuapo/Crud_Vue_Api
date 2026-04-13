@@ -15,6 +15,7 @@
   --color-gold-500: #c5a572;
   --color-gold-600: #b38e54;
   --color-gold-700: #a57d42;
+  --color-gold-800: #6e572f;
 
   --animate-fade-in-down: fadeInDown 0.5s ease-out forwards;
   --animate-fade-in-left: fadeInLeft 0.5s ease-out forwards;
@@ -46,19 +47,19 @@
 
 @layer base {
   body {
-    @apply bg-cream-100 text-slate-800 antialiased;
+    @apply bg-white text-slate-800 antialiased;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 }
 
-/* Custom staggered animations */
-.stagger-1 { animation-delay: 0.1s; }
-.stagger-2 { animation-delay: 0.15s; }
-.stagger-3 { animation-delay: 0.2s; }
-.stagger-4 { animation-delay: 0.25s; }
-.stagger-5 { animation-delay: 0.3s; }
-.stagger-6 { animation-delay: 0.35s; }
-.stagger-7 { animation-delay: 0.4s; }
-.stagger-8 { animation-delay: 0.45s; }
-.stagger-9 { animation-delay: 0.5s; }
-.stagger-10 { animation-delay: 0.55s; }
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-gold-100 rounded-full;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-gold-300 rounded-full hover:bg-gold-400 transition-colors;
+  }
+}

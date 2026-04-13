@@ -108,31 +108,3 @@ defineEmits(['edit', 'delete']);
     </div>
   </div>
 </template>
-
-<style scoped>
-.bg-cream-50\/30 { background-color: rgba(255, 250, 240, 0.3); }
-.bg-gold-50 { background-color: #fcf4e8; }
-.border-gold-50 { border-color: #fcf4e8; }
-.border-gold-100\/50 { border-color: rgba(226, 192, 141, 0.5); }
-.text-gold-800 { color: #6e572f; }
-.text-gold-700 { color: #8a6d3b; }
-.text-gold-600 { color: #a6844c; }
-.border-gold-200 { border-color: #e2c08d; }
-.border-gold-100 { border-color: #fcf4e8; }
-
-/* Custom Scrollbar for Elite look */
-.custom-scrollbar::-webkit-scrollbar {
-  height: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: #fcf4e8;
-  border-radius: 10px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #e2c08d;
-  border-radius: 10px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #d4a35c;
-}
-</style>
