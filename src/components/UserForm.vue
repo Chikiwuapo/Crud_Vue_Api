@@ -70,8 +70,3 @@ defineEmits(['update:modelValue', 'submit']);
     <button type="submit" class="hidden"></button>
   </form>
 </template>
-
-<style scoped>
-.border-gold-100 { border-color: #fcf4e8; }
-.focus\:border-gold-300:focus { border-color: #e2c08d; }
-</style>

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { getUsers } from '../service/userService';
+import { useToast } from '../composables/useToast';
 import Loader from '../components/Loader.vue';
 import UserList from '../components/UserList.vue';
 import AppModal from '../components/Modal.vue';
@@ -9,6 +10,9 @@ import UserForm from '../components/UserForm.vue';
 import Toast from '../components/Toast.vue';
 import Button from '../components/Button.vue';
 import Pagination from '../components/Pagination.vue';
+
+// --- Composable de Toasts ---
+const { toasts, addToast, removeToast } = useToast();
 
 // --- Estado Local para CRUD ---
 const users = ref([]);
@@ -19,7 +23,6 @@ const isEditing = ref(false);
 const currentUser = ref({ id: null, name: '', username: '', email: '', phone: '' });
 const userToDelete = ref(null);
 const errors = ref({});
-const toasts = ref([]);
 
 // --- Paginación (6 por página) ---
 const currentPage = ref(1);
@@ -41,23 +44,11 @@ const loadFromLocal = () => {
   return data ? JSON.parse(data) : null;
 };
 
-// --- Notificaciones (Toasts) ---
-const addToast = (type, message) => {
-  const id = Date.now();
-  toasts.value.push({ id, type, message });
-};
-
-const removeToast = (id) => {
-  toasts.value = toasts.value.filter(t => t.id !== id);
-};
-
 // --- Lógica de CRUD ---
 
-// 1. Obtener Usuarios (API -> LocalStorage -> Array Local)
 const fetchUsers = async () => {
   loading.value = true;
   
-  // Primero intentamos cargar de LocalStorage
   const localData = loadFromLocal();
   if (localData && localData.length > 0) {
     users.value = localData;
@@ -65,11 +56,10 @@ const fetchUsers = async () => {
     return;
   }
 
-  // Si no hay datos locales, traemos de la API (solo la primera vez)
   try {
     const { data } = await getUsers();
     users.value = data;
-    saveToLocal(data); // Guardamos la base inicial localmente
+    saveToLocal(data);
   } catch (error) {
     addToast('error', 'Error al sincronizar con la API');
     console.error(error);
@@ -147,7 +137,7 @@ const saveUser = async () => {
     currentPage.value = Math.ceil(users.value.length / itemsPerPage);
   }
 
-  saveToLocal(users.value); // Persistir cambios en LocalStorage
+  saveToLocal(users.value);
   loading.value = false;
 };
 
@@ -164,7 +154,7 @@ const confirmDelete = async () => {
 
     // Eliminar del Array Local
     users.value = users.value.filter(u => u.id !== userId);
-    saveToLocal(users.value); // Persistir borrado en LocalStorage
+    saveToLocal(users.value);
     
     addToast('success', `Usuario ${name} eliminado del sistema local`);
     
@@ -196,7 +186,7 @@ watch(users, (newVal) => {
       <Toast 
         v-for="toast in toasts" 
         :key="toast.id" 
-        :toast="toast" 
+        v-bind="toast"
         @close="removeToast"
       />
     </div>
@@ -268,7 +258,6 @@ watch(users, (newVal) => {
       </template>
     </AppModal>
 
-    <!-- Modal de Confirmación de Borrado -->
     <DeleteModal 
       :show="showDeleteModal"
       :userName="userToDelete?.name"
@@ -277,26 +266,3 @@ watch(users, (newVal) => {
     />
   </main>
 </template>
-
-<style>
-/* Estética Global Minimalista */
-body {
-  background-color: #ffffff;
-  color: #1e293b;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-}
-
-.text-gold-600 { color: #a6844c; }
-.text-gold-300 { color: #e2c08d; }
-.bg-gold-300 { background-color: #e2c08d; }
-.bg-cream-50 { background-color: #fffaf0; }
-
-/* Transiciones de Paginación */
-.pagination-enter-active, .pagination-leave-active {
-  transition: all 0.3s ease;
-}
-.pagination-enter-from, .pagination-leave-to {
-  opacity: 0;
-  transform: translateY(10px);
-}
-</style>

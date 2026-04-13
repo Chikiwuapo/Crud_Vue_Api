@@ -44,7 +44,7 @@ defineEmits(['close']);
           </button>
         </div>
         
-        <div class="flex-1 overflow-y-auto px-12 py-10 bg-cream-50/20">
+        <div class="flex-1 overflow-y-auto px-12 py-10 bg-gold-50/20">
           <slot></slot>
         </div>
         
@@ -55,10 +55,3 @@ defineEmits(['close']);
     </div>
   </Transition>
 </template>
-
-<style scoped>
-.bg-cream-50\/20 { background-color: rgba(fffaf0, 0.2); }
-.border-gold-100\/50 { border-color: rgba(226, 192, 141, 0.5); }
-.border-gold-50 { border-color: #fcf4e8; }
-.bg-gold-300 { background-color: #e2c08d; }
-</style>

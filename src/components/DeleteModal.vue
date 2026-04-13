@@ -31,7 +31,7 @@ defineEmits(['confirm', 'cancel']);
             Confirmar la remoción de <span class="text-slate-900 font-extrabold underline decoration-gold-200">{{ userName }}</span> de la base de datos elite.
           </p>
         </div>
-        <div class="flex items-center gap-6 p-8 bg-cream-50/30 border-t border-gold-50">
+        <div class="flex items-center gap-6 p-8 bg-gold-50/30 border-t border-gold-50">
           <button 
             @click="$emit('cancel')"
             class="flex-1 px-6 py-3 text-xs font-bold text-slate-400 hover:text-slate-600 uppercase tracking-widest transition-all"
@@ -49,10 +49,3 @@ defineEmits(['confirm', 'cancel']);
     </div>
   </Transition>
 </template>
-
-<style scoped>
-.bg-cream-50\/30 { background-color: rgba(fffaf0, 0.3); }
-.border-gold-100 { border-color: #e2c08d; }
-.border-gold-50 { border-color: #fcf4e8; }
-.decoration-gold-200 { text-decoration-color: #e2c08d; }
-</style>
